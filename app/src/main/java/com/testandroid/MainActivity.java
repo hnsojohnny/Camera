@@ -1,6 +1,7 @@
 package com.testandroid;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.View;
@@ -8,6 +9,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 /**
  * @author by hs-johnny
@@ -15,8 +17,11 @@ import android.widget.FrameLayout;
  */
 public class MainActivity extends Activity {
 
-    public FrameLayout preview;
-    private Button btn;
+    FrameLayout preview;
+    Button btn;
+    Button tackpicBtn, videoBtn;
+    CameraPreview cameraPreview;
+    ImageView previewIv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,14 +30,10 @@ public class MainActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-        preview = findViewById(R.id.camera_preview);
         btn = findViewById(R.id.btn);
-        CameraPreview cameraPreview = new CameraPreview(this);
-        preview.addView(cameraPreview);
-        SettingFragment.passCamera(cameraPreview.getCameraInstance());
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-        SettingFragment.setDefault(PreferenceManager.getDefaultSharedPreferences(this));
-        SettingFragment.init(PreferenceManager.getDefaultSharedPreferences(this));
+        previewIv = findViewById(R.id.preview_iv);
+        tackpicBtn = findViewById(R.id.tackpic_btn);
+        videoBtn = findViewById(R.id.video_btn);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -40,5 +41,56 @@ public class MainActivity extends Activity {
                         new SettingFragment()).addToBackStack(null).commit();
             }
         });
+        tackpicBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cameraPreview.takePicture(previewIv);
+            }
+        });
+        videoBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(cameraPreview.isRecording()){
+                    cameraPreview.stopRecording(previewIv);
+                    videoBtn.setText("录像");
+                } else {
+                    if(cameraPreview.startRecording()){
+                        videoBtn.setText("停止");
+                    }
+                }
+            }
+        });
+        previewIv.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, ShowMedioActivity.class);
+                intent.setDataAndType(cameraPreview.getOutputMediaFileUri(), cameraPreview.getOutputMediaFileType());
+                startActivityForResult(intent, 0);
+            }
+        });
+    }
+
+    private void initCamera(){
+        preview = findViewById(R.id.camera_preview);
+        cameraPreview = new CameraPreview(this);
+        preview.addView(cameraPreview);
+        SettingFragment.passCamera(cameraPreview.getCameraInstance());
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        SettingFragment.setDefault(PreferenceManager.getDefaultSharedPreferences(this));
+        SettingFragment.init(PreferenceManager.getDefaultSharedPreferences(this));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(cameraPreview == null){
+            initCamera();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        cameraPreview = null;
     }
 }
