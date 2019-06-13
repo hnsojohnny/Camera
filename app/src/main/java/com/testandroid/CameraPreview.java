@@ -11,6 +11,8 @@ import android.media.MediaRecorder;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -34,7 +36,7 @@ import java.util.List;
  * @author by hs-johnny
  * Created on 2019/6/12
  */
-public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
+public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback, Camera.PreviewCallback {
 
     private static final String TAG = "CameraPreview";
     private Camera mCamera;
@@ -54,7 +56,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public Camera getCameraInstance(){
         if (mCamera == null){
             try {
-                mCamera = Camera.open();
+                CameraHandlerThread mThread = new CameraHandlerThread("camera thread");
+                synchronized (mThread){
+                    mCamera = Camera.open();
+                }
             }catch (Exception e){
                 Log.e(TAG, "camera is not available" );
             }
@@ -65,6 +70,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         mCamera = getCameraInstance();
+        mCamera.setPreviewCallback(this);
         try {
             mCamera.setPreviewDisplay(mHolder);
             mCamera.startPreview();
@@ -278,5 +284,54 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                 camera.setParameters(para);
             }
         });
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getPointerCount() == 1){
+            handleFocus(event, mCamera);
+        }
+        return true;
+    }
+
+    @Override
+    public void onPreviewFrame(byte[] data, Camera camera) {
+
+    }
+
+    private void openCameraOriginal(){
+        try {
+            mCamera = Camera.open();
+        }catch (Exception e){
+            Log.e(TAG, "camera is not available");
+        }
+    }
+    
+    private class CameraHandlerThread extends HandlerThread{
+        Handler handler;
+        public CameraHandlerThread(String name) {
+            super(name);
+            start();
+            handler = new Handler(getLooper());
+        }
+        
+        synchronized void notifyCameraOpened(){
+            notify();
+        }
+        
+        void openCamera(){
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    openCameraOriginal();
+                    notifyCameraOpened();
+                }
+            });
+            try {
+                wait();
+            }catch (Exception e){
+                Log.e(TAG, "wait was interrupted");
+            }
+        }
     }
 }

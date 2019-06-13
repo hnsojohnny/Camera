@@ -22,6 +22,7 @@ public class MainActivity extends Activity {
     Button tackpicBtn, videoBtn;
     CameraPreview cameraPreview;
     ImageView previewIv;
+    Button startBtn, endBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +35,8 @@ public class MainActivity extends Activity {
         previewIv = findViewById(R.id.preview_iv);
         tackpicBtn = findViewById(R.id.tackpic_btn);
         videoBtn = findViewById(R.id.video_btn);
+        startBtn = findViewById(R.id.start_btn);
+        endBtn = findViewById(R.id.end_btn);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -68,6 +71,18 @@ public class MainActivity extends Activity {
                 startActivityForResult(intent, 0);
             }
         });
+        startBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                initCamera();
+            }
+        });
+        endBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopPreview();
+            }
+        });
     }
 
     private void initCamera(){
@@ -92,5 +107,9 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         cameraPreview = null;
+    }
+
+    public void stopPreview(){
+        preview.removeAllViews();
     }
 }
