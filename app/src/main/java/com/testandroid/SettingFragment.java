@@ -167,15 +167,15 @@ public class SettingFragment extends PreferenceFragment implements SharedPrefere
     }
 
     public static void init(SharedPreferences sharedPreferences){
-//        setPreviewSize(sharedPreferences.getString(KEY_PREF_PREV_SIZE, ""));
-//        setPictureSize(sharedPreferences.getString(KEY_PREF_PIC_SIZE, ""));
-//        setFlashMode(sharedPreferences.getString(KEY_PREF_FLASH_MODE, ""));
-//        setFocusMode(sharedPreferences.getString(KEY_PREF_FOCUS_MODE, ""));
-//        setWhiteBalance(sharedPreferences.getString(KEY_PREF_WHITE_BALANCE, ""));
-//        setSceneMode(sharedPreferences.getString(KEY_PREF_SCENE_MODE, ""));
-//        setExposComp(sharedPreferences.getString(KEY_PREF_EXPOS_COMP, ""));
-//        setJpegQuality(sharedPreferences.getString(KEY_PREF_JPEG_QUALITY, ""));
-//        setGpsData(sharedPreferences.getBoolean(KEY_PREF_GPS_DATA, false));
+        setPreviewSize(sharedPreferences.getString(KEY_PREF_PREV_SIZE, ""));
+        setPictureSize(sharedPreferences.getString(KEY_PREF_PIC_SIZE, ""));
+        setFlashMode(sharedPreferences.getString(KEY_PREF_FLASH_MODE, ""));
+        setFocusMode(sharedPreferences.getString(KEY_PREF_FOCUS_MODE, ""));
+        setWhiteBalance(sharedPreferences.getString(KEY_PREF_WHITE_BALANCE, ""));
+        setSceneMode(sharedPreferences.getString(KEY_PREF_SCENE_MODE, ""));
+        setExposComp(sharedPreferences.getString(KEY_PREF_EXPOS_COMP, ""));
+        setJpegQuality(sharedPreferences.getString(KEY_PREF_JPEG_QUALITY, ""));
+        setGpsData(sharedPreferences.getBoolean(KEY_PREF_GPS_DATA, false));
         mCamera.stopPreview();
         mCamera.setParameters(mParameters);
         mCamera.startPreview();

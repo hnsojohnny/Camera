@@ -46,11 +46,22 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private Uri outputMediaFileUri;
     private String outputMediaFileType;
     private MediaRecorder mMediaRecorder;
+    private float oldDist = 1f;
+    private static final int PROCESS_WITH_HANDLER_THREAD = 1;
+    private int processType = PROCESS_WITH_HANDLER_THREAD;
+    private ProcessWithHandlerThread processWithHandlerThread;
+    private Handler processFrameHandler;
 
     public CameraPreview(Context context) {
         super(context);
         mHolder = getHolder();
         mHolder.addCallback(this);
+        switch (processType){
+            case PROCESS_WITH_HANDLER_THREAD:
+                processWithHandlerThread = new ProcessWithHandlerThread("process frame");
+                processFrameHandler = new Handler(processWithHandlerThread.getLooper(), processWithHandlerThread);
+                break;
+        }
     }
 
     public Camera getCameraInstance(){
@@ -58,7 +69,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             try {
                 CameraHandlerThread mThread = new CameraHandlerThread("camera thread");
                 synchronized (mThread){
-                    mCamera = Camera.open();
+                    mThread.openCamera();
                 }
             }catch (Exception e){
                 Log.e(TAG, "camera is not available" );
@@ -290,13 +301,55 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getPointerCount() == 1){
             handleFocus(event, mCamera);
+        } else {
+            switch (event.getAction() & MotionEvent.ACTION_MASK){
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    oldDist = getFingerSpacing(event);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    float newDist = getFingerSpacing(event);
+                    if(newDist > oldDist){
+                        handleZoom(true, mCamera);
+                    }else if (newDist < oldDist){
+                        handleZoom(false, mCamera);
+                    }
+                    oldDist = newDist;
+                    break;
+            }
         }
         return true;
     }
 
+    private static float getFingerSpacing(MotionEvent event){
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return (float) Math.sqrt(x * x + y * y);
+    }
+
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
+        switch (processType){
+            case PROCESS_WITH_HANDLER_THREAD:
+                processFrameHandler.obtainMessage(ProcessWithHandlerThread.WHAT_PROCESS_FRAME, data).sendToTarget();
+                break;
+        }
+    }
 
+    private void handleZoom(boolean isZoomIn, Camera camera){
+        Camera.Parameters parameters = camera.getParameters();
+        if(parameters.isZoomSupported()){
+            int maxZoom = parameters.getMaxZoom();
+            int zoom = parameters.getZoom();
+            if(isZoomIn && zoom < maxZoom){
+                zoom ++ ;
+            }else if(zoom > 0){
+                zoom --;
+            }
+            parameters.setZoom(zoom);
+            camera.setParameters(parameters);
+        }else {
+            Log.e(TAG, "zoom not supported");
+        }
     }
 
     private void openCameraOriginal(){
